@@ -17,7 +17,13 @@
         </button>
       </div>
     </form>
-    <RoomChat v-else :users="users.value" @send-message="onSendMessage" />
+    <RoomChat
+      v-else
+      :users="users.value"
+      :selected-user-to-send="selectedUserToSend?.value"
+      @send-message="onSendMessage"
+      @selected-user-to-send="selectedUserToSendEvent"
+    />
   </div>
 </template>
 
@@ -31,6 +37,7 @@ export default {
     const username = ref("");
     const isLogedIn = ref(false);
     const users = ref([]);
+    const selectedUserToSend = ref({});
 
     function onConnect() {
       socket.connect();
@@ -44,14 +51,20 @@ export default {
       socket.connect();
     }
 
-    return { username, isLogedIn, users, onConnect, onSubmitLogin };
+    return {
+      username,
+      isLogedIn,
+      users,
+      selectedUserToSend,
+      onConnect,
+      onSubmitLogin,
+    };
   },
   components: {
     RoomChat,
   },
   mounted() {
     socket.on("getUsers", (data) => {
-      console.log("getUsers...", data);
       data.forEach((user) => {
         user.self = user.userId === socket.id;
       });
@@ -62,21 +75,44 @@ export default {
         if (a.username < b.username) return -1;
         return a.username > b.username ? 1 : 0;
       });
-
-      console.log("users..", this.users);
     });
 
     socket.on("userJustConnected", (data) => {
       this.users.value.push(data);
-      console.log("user just connected", this.users.value);
     });
 
-    socket.on("privateMessageToReceiver", () => {});
+    socket.on("privateMessageToReceiver", ({ message, from }) => {
+      const user = this.users.value.find((user) => user.userId === from);
+      if (user.userId === from) {
+        if (!user.messages) {
+          user.messages = [];
+        }
+        user.messages.push({
+          message,
+          isSelf: false,
+        });
+      }
+    });
   },
   methods: {
     onSendMessage($event) {
       socket.emit("privateMessage", $event);
+      if (!this.selectedUserToSend.value.messages)
+        this.selectedUserToSend.value.messages = [];
+      this.selectedUserToSend.value.messages.push({
+        message: $event.message,
+        isSelf: true,
+      });
     },
+    selectedUserToSendEvent($event) {
+      this.selectedUserToSend.value = $event;
+    },
+  },
+  unmounted() {
+    socket.off("getUsers");
+    socket.off("userJustConnected");
+    socket.off("privateMessageToReceiver");
+    socket.off("privateMessage");
   },
 };
 </script>

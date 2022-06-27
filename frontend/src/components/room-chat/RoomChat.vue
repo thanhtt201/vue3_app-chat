@@ -32,7 +32,7 @@
           <li>
             <a
               class="flex items-center px-3 py-2 text-sm transition duration-150 ease-in-out border-b border-gray-300 cursor-pointer hover:bg-gray-100 focus:outline-none"
-              v-for="user in users"
+              v-for="user in usersFilter"
               :key="user.userId"
               @click="onSelectedUserToSend(user)"
             >
@@ -44,7 +44,7 @@
               <div class="w-full pb-2">
                 <div class="flex justify-between">
                   <span class="block ml-2 font-semibold text-gray-600">{{
-                    user.username
+                    user?.username
                   }}</span>
                   <span class="block ml-2 text-sm text-gray-600"
                     >25 minutes</span
@@ -74,34 +74,18 @@
           </div>
           <div class="relative w-full p-6 overflow-y-auto h-[40rem]">
             <ul class="space-y-2">
-              <li class="flex justify-start">
+              <li
+                v-for="(message, index) in selectedUserToSend?.messages"
+                :key="index"
+                :class="[
+                  'flex',
+                  message.isSelf ? 'justify-end' : 'justify-start',
+                ]"
+              >
                 <div
                   class="relative max-w-xl px-4 py-2 text-gray-700 rounded shadow"
                 >
-                  <span class="block">Hi</span>
-                </div>
-              </li>
-              <li class="flex justify-end">
-                <div
-                  class="relative max-w-xl px-4 py-2 text-gray-700 bg-gray-100 rounded shadow"
-                >
-                  <span class="block">Hiiii</span>
-                </div>
-              </li>
-              <li class="flex justify-end">
-                <div
-                  class="relative max-w-xl px-4 py-2 text-gray-700 bg-gray-100 rounded shadow"
-                >
-                  <span class="block">how are you?</span>
-                </div>
-              </li>
-              <li class="flex justify-start">
-                <div
-                  class="relative max-w-xl px-4 py-2 text-gray-700 rounded shadow"
-                >
-                  <span class="block"
-                    >Lorem ipsum dolor sit, amet consectetur adipisicing elit.
-                  </span>
+                  <span class="block">{{ message.message }}</span>
                 </div>
               </li>
             </ul>
@@ -142,44 +126,42 @@
                 />
               </svg>
             </button>
-            <form action="" @submit.prevent="onSendMessage">
-              <input
-                type="text"
-                placeholder="Message"
-                class="block w-full py-2 pl-4 mx-3 bg-gray-100 rounded-full outline-none focus:text-gray-700"
-                name="message"
-                required
-                v-model="textMessage"
-              />
-              <button>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  class="w-5 h-5 text-gray-500"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"
-                  />
-                </svg>
-              </button>
-              <button type="submit">
-                <svg
-                  class="w-5 h-5 text-gray-500 origin-center transform rotate-90"
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
-                  <path
-                    d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"
-                  />
-                </svg>
-              </button>
-            </form>
+            <input
+              type="text"
+              placeholder="Message"
+              class="block w-full py-2 pl-4 mx-3 bg-gray-100 rounded-full outline-none focus:text-gray-700"
+              name="message"
+              required
+              v-model="textMessage"
+            />
+            <button>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="w-5 h-5 text-gray-500"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"
+                />
+              </svg>
+            </button>
+            <button type="submit" @click.prevent="onSendMessage">
+              <svg
+                class="w-5 h-5 text-gray-500 origin-center transform rotate-90"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"
+                />
+              </svg>
+            </button>
           </div>
         </div>
       </div>
@@ -193,35 +175,36 @@ export default {
     return {
       userActive: {},
       textMessage: "",
-      selectedUserToSend: {},
+      usersFilter: [],
     };
   },
   props: {
     users: {
       type: Array,
     },
+    selectedUserToSend: {
+      type: Object,
+    },
   },
   watch: {
     users: {
       deep: true,
       handler(newVal) {
-        const user = newVal.find((user) => user.self === true);
-        this.userActive = user;
+        const user = newVal.filter((user) => user.self !== true);
+        this.usersFilter = user;
       },
     },
   },
-  mounted() {
-    console.log("users", this.users);
-  },
   methods: {
     onSelectedUserToSend(user) {
-      this.selectedUserToSend = user;
+      this.$emit("selected-user-to-send", user);
     },
     onSendMessage() {
       this.$emit("send-message", {
         message: this.textMessage,
         to: this.selectedUserToSend.userId,
       });
+      this.textMessage = "";
     },
   },
 };
